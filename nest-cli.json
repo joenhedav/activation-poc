@@ -28,6 +28,15 @@
         "tsConfigPath": "apps/billing-service/tsconfig.app.json"
       }
     },
+    "contracts": {
+      "type": "library",
+      "root": "libs/contracts",
+      "entryFile": "index",
+      "sourceRoot": "libs/contracts/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/contracts/tsconfig.lib.json"
+      }
+    },
     "crm-analytics-service": {
       "type": "application",
       "root": "apps/crm-analytics-service",
@@ -35,6 +44,15 @@
       "sourceRoot": "apps/crm-analytics-service/src",
       "compilerOptions": {
         "tsConfigPath": "apps/crm-analytics-service/tsconfig.app.json"
+      }
+    },
+    "kafka-toolkit": {
+      "type": "library",
+      "root": "libs/kafka-toolkit",
+      "entryFile": "index",
+      "sourceRoot": "libs/kafka-toolkit/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/kafka-toolkit/tsconfig.lib.json"
       }
     },
     "notification-service": {
