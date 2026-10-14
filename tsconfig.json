@@ -11,7 +11,10 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "target": "ES2023",
-    "types": ["node", "jest"],
+    "types": [
+      "node",
+      "jest"
+    ],
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": ".",
@@ -19,5 +22,26 @@
     "skipLibCheck": true,
     "strict": true,
     "strictPropertyInitialization": false
-  }
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/activation-poc/tsconfig.app.json"
+    },
+    {
+      "path": "./apps/activation-api/tsconfig.app.json"
+    },
+    {
+      "path": "./apps/billing-service/tsconfig.app.json"
+    },
+    {
+      "path": "./apps/provisioning-service/tsconfig.app.json"
+    },
+    {
+      "path": "./apps/notification-service/tsconfig.app.json"
+    },
+    {
+      "path": "./apps/crm-analytics-service/tsconfig.app.json"
+    }
+  ]
 }
