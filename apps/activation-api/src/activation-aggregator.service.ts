@@ -53,7 +53,7 @@ export class ActivationAggregatorService {
             history: { eventType: event.eventType, at: new Date(event.occurredAt) },
           },
         },
-        { new: true },
+        { returnDocument: 'after' },
       )
       .lean();
 
@@ -119,7 +119,7 @@ export class ActivationAggregatorService {
       .findOneAndUpdate(
         { _id: activationId, status: ACTIVATION_STATUS.IN_PROGRESS },
         { $set: { status: to }, $push: { history: { eventType, at: new Date() } } },
-        { new: true },
+        { returnDocument: 'after' },
       )
       .lean();
   }

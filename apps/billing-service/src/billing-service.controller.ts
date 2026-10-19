@@ -20,4 +20,17 @@ export class BillingServiceController {
     }
     await this.service.handleActivationRequested(event);
   }
+
+  /** Compensación: si la activación falló, hay que anular la cuenta. */
+  @EventPattern(TOPICS.ACTIVATION_EVENTS)
+  async onActivationEvent(@Payload() event: DomainEvent) {
+    if (!event || typeof event !== 'object' || !('eventType' in event)) {
+      this.logger.warn(`Mensaje ignorado en ${TOPICS.ACTIVATION_EVENTS}: ${JSON.stringify(event)}`);
+      return;
+    }
+    if (event.eventType === 'ActivationFailed') {
+      await this.service.handleActivationFailed(event);
+    }
+    // ActivationCompleted: billing no tiene nada que hacer.
+  }
 }
