@@ -21,6 +21,12 @@ export class ActivationApiController {
     return this.service.create(dto);
   }
 
+  /** Las últimas activaciones (la UI las muestra al cargar). */
+  @Get()
+  findRecent() {
+    return this.service.findRecent();
+  }
+
   /** RF-09: estado actual e historial de eventos. */
   @Get(':id')
   findOne(@Param('id') id: string) {

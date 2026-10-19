@@ -9,6 +9,7 @@ import { randomUUID } from 'crypto';
 import { Model } from 'mongoose';
 import { ACTIVATION_STATUS, createEvent } from '@app/contracts';
 import { KafkaPublisher } from '@app/kafka-toolkit';
+import { ActivationGateway } from './activation.gateway';
 import { CreateActivationDto } from './dto/create-activation.dto';
 import { Activation } from './schemas/activation.schema';
 
@@ -19,6 +20,7 @@ export class ActivationApiService {
   constructor(
     @InjectModel(Activation.name) private readonly model: Model<Activation>,
     private readonly publisher: KafkaPublisher,
+    private readonly gateway: ActivationGateway,
   ) {}
 
   async create(dto: CreateActivationDto) {
@@ -26,7 +28,7 @@ export class ActivationApiService {
     const simulateFailure = dto.simulateFailure ?? 'none';
     const channel = dto.channel ?? 'web';
 
-    await this.model.create({
+    const created = await this.model.create({
       _id: activationId,
       customerId: dto.customerId,
       planId: dto.planId,
@@ -34,6 +36,9 @@ export class ActivationApiService {
       simulateFailure,
       history: [{ eventType: 'ActivationRequested', at: new Date() }],
     });
+
+    // Se avisa a la UI antes de publicar, así la timeline siempre empieza en PENDING.
+    this.gateway.emitUpdate(created.toObject());
 
     // Fases 1-3: se publica directo después de guardar. Si Kafka falla acá, la
     // activación queda PENDING sin evento (riesgo documentado; lo resuelve el outbox en la fase 4).
@@ -61,5 +66,9 @@ export class ActivationApiService {
       throw new NotFoundException(`Activación ${id} no encontrada`);
     }
     return activation;
+  }
+
+  findRecent() {
+    return this.model.find().sort({ createdAt: -1 }).limit(20).lean();
   }
 }

@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { ACTIVATION_STATUS, createEvent } from '@app/contracts';
 import type { ActivationStatus, DomainEvent } from '@app/contracts';
 import { KafkaPublisher } from '@app/kafka-toolkit';
+import { ActivationGateway } from './activation.gateway';
 import { Activation } from './schemas/activation.schema';
 
 export type StepName = 'billing' | 'provisioning';
@@ -18,6 +19,7 @@ const OPEN: ActivationStatus[] = [
  * Agregador de la saga (sección 06): junta los resultados de billing y provisioning
  * y decide si la activación terminó bien o mal. Todas las transiciones son atómicas
  * en Mongo, así que dos eventos simultáneos no pueden finalizar la activación dos veces.
+ * Cada cambio se empuja a la UI por WebSocket.
  */
 @Injectable()
 export class ActivationAggregatorService {
@@ -26,6 +28,7 @@ export class ActivationAggregatorService {
   constructor(
     @InjectModel(Activation.name) private readonly model: Model<Activation>,
     private readonly publisher: KafkaPublisher,
+    private readonly gateway: ActivationGateway,
   ) {}
 
   async applyResult(
@@ -62,11 +65,13 @@ export class ActivationAggregatorService {
       await this.recordHistory(event);
       return;
     }
+    this.gateway.emitUpdate(updated);
 
     // 2) Decidir. Con el primer fallo termina mal; con los dos OK termina bien.
     if (!ok) {
       const done = await this.finalize(activationId, ACTIVATION_STATUS.FAILED, 'ActivationFailed');
       if (done) {
+        this.gateway.emitUpdate(done);
         await this.publisher.publish(
           createEvent({
             eventType: 'ActivationFailed',
@@ -83,6 +88,7 @@ export class ActivationAggregatorService {
     if (updated.steps?.billing?.status === 'OK' && updated.steps?.provisioning?.status === 'OK') {
       const done = await this.finalize(activationId, ACTIVATION_STATUS.ACTIVE, 'ActivationCompleted');
       if (done) {
+        this.gateway.emitUpdate(done);
         await this.publisher.publish(
           createEvent({
             eventType: 'ActivationCompleted',
@@ -98,15 +104,20 @@ export class ActivationAggregatorService {
 
   /** Agrega un evento al historial sin tocar el estado. */
   async recordHistory(event: DomainEvent): Promise<void> {
-    const result = await this.model.updateOne(
-      { _id: event.correlationId },
-      { $push: { history: { eventType: event.eventType, at: new Date(event.occurredAt) } } },
-    );
-    if (result.matchedCount === 0) {
+    const updated = await this.model
+      .findOneAndUpdate(
+        { _id: event.correlationId },
+        { $push: { history: { eventType: event.eventType, at: new Date(event.occurredAt) } } },
+        { returnDocument: 'after' },
+      )
+      .lean();
+
+    if (!updated) {
       this.logger.warn(`${event.eventType} de una activación desconocida (${event.correlationId})`);
-    } else {
-      this.logger.log(`${event.eventType} registrado en el historial (${event.correlationId})`);
+      return;
     }
+    this.logger.log(`${event.eventType} registrado en el historial (${event.correlationId})`);
+    this.gateway.emitUpdate(updated);
   }
 
   /** Pasa de IN_PROGRESS a un estado final. Devuelve null si otro evento ya la finalizó. */
