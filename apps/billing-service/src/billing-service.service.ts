@@ -33,14 +33,25 @@ export class BillingServiceService {
       return;
     }
 
-    const billingAccountId = `bill-${randomUUID().slice(0, 8)}`;
-    await this.model.create({
-      activationId,
-      customerId: event.customerId,
-      planId: event.payload.planId,
-      billingAccountId,
-      status: 'CREATED',
-    });
+    // Reentrega (al menos una vez): si la cuenta ya existe, se reutiliza en lugar de
+    // fallar por clave duplicada. La idempotencia por eventId llega en la fase 3.
+    const existing = await this.model.findOne({ activationId }).lean();
+    let billingAccountId: string;
+    if (existing) {
+      billingAccountId = existing.billingAccountId;
+      this.logger.warn(
+        `Cuenta ya existente para ${activationId}: se reutiliza ${billingAccountId} (mensaje reentregado)`,
+      );
+    } else {
+      billingAccountId = `bill-${randomUUID().slice(0, 8)}`;
+      await this.model.create({
+        activationId,
+        customerId: event.customerId,
+        planId: event.payload.planId,
+        billingAccountId,
+        status: 'CREATED',
+      });
+    }
 
     await this.publisher.publish(
       createEvent({
