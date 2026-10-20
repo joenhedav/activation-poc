@@ -1,0 +1,33 @@
+# Imagen única para las apps NestJS del monorepo.
+# Uso:  docker build -f docker/Dockerfile.nest --build-arg APP=billing-service .
+#
+# El contexto es la raíz del repo porque todas las apps usan libs/contracts y libs/kafka-toolkit.
+
+# ── 1) Compilar la app ──
+FROM node:24-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY nest-cli.json tsconfig.json tsconfig.build.json ./
+COPY apps ./apps
+COPY libs ./libs
+ARG APP
+RUN npx nest build ${APP}
+
+# ── 2) Dependencias de producción ──
+FROM node:24-alpine AS prod-deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# ── 3) Imagen final ──
+FROM node:24-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+ARG APP
+ENV APP=${APP}
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=build /app/dist/apps/${APP} ./dist
+COPY package.json ./
+# Salida de tsc: dist/apps/<app>/apps/<app>/src/main.js  →  ./dist/apps/<app>/src/main.js
+CMD ["sh", "-c", "node dist/apps/${APP}/src/main.js"]
