@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { KafkaToolkitModule } from '@app/kafka-toolkit';
 import { CrmAnalyticsServiceController } from './crm-analytics-service.controller';
 import { CrmAnalyticsServiceService } from './crm-analytics-service.service';
 import { EventLog, EventLogSchema } from './schemas/event-log.schema';
@@ -12,6 +13,7 @@ const DEFAULT_MONGO_URI =
   imports: [
     MongooseModule.forRoot(process.env.MONGO_URI ?? DEFAULT_MONGO_URI),
     MongooseModule.forFeature([{ name: EventLog.name, schema: EventLogSchema }]),
+    KafkaToolkitModule.forRoot({ clientId: 'crm-analytics-service' }),
   ],
   controllers: [CrmAnalyticsServiceController],
   providers: [CrmAnalyticsServiceService],

@@ -38,19 +38,23 @@ export class KafkaPublisher implements OnModuleInit, OnModuleDestroy {
   ): Promise<void> {
     const topic = EVENT_TOPIC[event.eventType];
 
-    await lastValueFrom(
-      this.client.emit(topic, {
-        key: event.customerId,
-        value: event,
-        headers: {
-          eventType: event.eventType,
-          correlationId: event.correlationId,
-        },
-      }),
-    );
+    await this.publishRaw(topic, event, event.customerId, {
+      eventType: event.eventType,
+      correlationId: event.correlationId,
+    });
 
     this.logger.log(
       `→ ${event.eventType} publicado en ${topic} (correlationId=${event.correlationId})`,
     );
+  }
+
+  /** Publica un mensaje tal cual en un topic (lo usa la DLQ para reenviar el original). */
+  async publishRaw(
+    topic: string,
+    value: unknown,
+    key: string | undefined,
+    headers: Record<string, string>,
+  ): Promise<void> {
+    await lastValueFrom(this.client.emit(topic, { key, value, headers }));
   }
 }

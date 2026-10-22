@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { KafkaToolkitModule } from '@app/kafka-toolkit';
 import { LoyaltyServiceController } from './loyalty-service.controller';
 import { LoyaltyServiceService } from './loyalty-service.service';
 import { LoyaltyAward, LoyaltyAwardSchema } from './schemas/loyalty-award.schema';
@@ -12,6 +13,7 @@ const DEFAULT_MONGO_URI =
   imports: [
     MongooseModule.forRoot(process.env.MONGO_URI ?? DEFAULT_MONGO_URI),
     MongooseModule.forFeature([{ name: LoyaltyAward.name, schema: LoyaltyAwardSchema }]),
+    KafkaToolkitModule.forRoot({ clientId: 'loyalty-service' }),
   ],
   controllers: [LoyaltyServiceController],
   providers: [LoyaltyServiceService],

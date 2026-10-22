@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { KafkaToolkitModule } from '@app/kafka-toolkit';
 import { MailerService } from './mailer.service';
 import { NotificationServiceController } from './notification-service.controller';
 import { NotificationServiceService } from './notification-service.service';
@@ -18,6 +19,7 @@ const DEFAULT_MONGO_URI =
     MongooseModule.forFeature([
       { name: Notification.name, schema: NotificationSchema },
     ]),
+    KafkaToolkitModule.forRoot({ clientId: 'notification-service' }),
   ],
   controllers: [NotificationServiceController],
   providers: [NotificationServiceService, MailerService],

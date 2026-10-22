@@ -1,23 +1,22 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { TOPICS } from '@app/contracts';
-import type { DomainEvent } from '@app/contracts';
+import { KafkaConsumerGuard } from '@app/kafka-toolkit';
 import { LoyaltyServiceService } from './loyalty-service.service';
 
 @Controller()
 export class LoyaltyServiceController {
-  private readonly logger = new Logger(LoyaltyServiceController.name);
-
-  constructor(private readonly service: LoyaltyServiceService) {}
+  constructor(
+    private readonly service: LoyaltyServiceService,
+    private readonly guard: KafkaConsumerGuard,
+  ) {}
 
   @EventPattern(TOPICS.ACTIVATION_EVENTS)
-  async onActivationEvent(@Payload() event: DomainEvent) {
-    if (!event || typeof event !== 'object' || !('eventType' in event)) {
-      this.logger.warn(`Mensaje ignorado en ${TOPICS.ACTIVATION_EVENTS}: ${JSON.stringify(event)}`);
-      return;
-    }
-    if (event.eventType === 'ActivationCompleted') {
-      await this.service.award(event);
-    }
+  onActivationEvent(@Payload() message: unknown) {
+    return this.guard.handle(TOPICS.ACTIVATION_EVENTS, 'loyalty', message, async (event) => {
+      if (event.eventType === 'ActivationCompleted') {
+        await this.service.award(event);
+      }
+    });
   }
 }
