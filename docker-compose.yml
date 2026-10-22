@@ -163,6 +163,19 @@ services:
       mailhog:
         condition: service_started
 
+  crm-analytics-service:
+    <<: *app-base
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.nest
+      args:
+        APP: crm-analytics-service
+    environment:
+      <<: *app-env
+      KAFKA_CLIENT_ID: crm-analytics-service
+      KAFKA_GROUP_ID: crm-analytics
+      MONGO_URI: mongodb://mongo:27017/crm?replicaSet=rs0
+
   # La UI se compila con Vite y se sirve con nginx (puerto 80 del contenedor).
   demo-ui:
     build:
@@ -175,21 +188,23 @@ services:
     depends_on:
       - activation-api
 
-  # ───────────── Escenario 5 (descomentar cuando exista apps/loyalty-service) ─────────────
-  # loyalty-service:
-  #   profiles: ["loyalty"]
-  #   build:
-  #     context: .
-  #     dockerfile: docker/Dockerfile.nest
-  #     args:
-  #       APP: loyalty-service
-  #   environment:
-  #     <<: *app-env
-  #     KAFKA_CLIENT_ID: loyalty-service
-  #     KAFKA_GROUP_ID: loyalty
-  #   depends_on:
-  #     kafka-init:
-  #       condition: service_completed_successfully
+  # ───────────── Escenario 5: consumidor nuevo (perfil "loyalty") ─────────────
+  # No arranca con "docker compose up". Se levanta aparte:
+  #   docker compose --profile loyalty up -d loyalty-service
+  # Su consumer group es nuevo, así que lee todo el historial desde el inicio.
+  loyalty-service:
+    <<: *app-base
+    profiles: ["loyalty"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.nest
+      args:
+        APP: loyalty-service
+    environment:
+      <<: *app-env
+      KAFKA_CLIENT_ID: loyalty-service
+      KAFKA_GROUP_ID: loyalty
+      MONGO_URI: mongodb://mongo:27017/loyalty?replicaSet=rs0
 
 volumes:
   kafka-data:
