@@ -40,9 +40,6 @@
   "files": [],
   "references": [
     {
-      "path": "./apps/activation-poc/tsconfig.app.json"
-    },
-    {
       "path": "./apps/activation-api/tsconfig.app.json"
     },
     {

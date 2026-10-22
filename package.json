@@ -12,13 +12,13 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/apps/activation-poc/apps/activation-poc/src/main",
+    "start:prod": "node dist/apps/activation-api/apps/activation-api/src/main",
     "lint": "oxlint --type-aware src/ test/",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watch",
     "test:cov": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage",
     "test:debug": "node --inspect-brk --experimental-vm-modules -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --projects \"./apps/activation-poc/test/jest-e2e.json\" \"./apps/activation-api/test/jest-e2e.json\" \"./apps/billing-service/test/jest-e2e.json\" \"./apps/provisioning-service/test/jest-e2e.json\" \"./apps/notification-service/test/jest-e2e.json\" \"./apps/crm-analytics-service/test/jest-e2e.json\" \"./apps/loyalty-service/test/jest-e2e.json\""
+    "test:e2e": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --projects \"./apps/activation-api/test/jest-e2e.json\" \"./apps/billing-service/test/jest-e2e.json\" \"./apps/provisioning-service/test/jest-e2e.json\" \"./apps/notification-service/test/jest-e2e.json\" \"./apps/crm-analytics-service/test/jest-e2e.json\" \"./apps/loyalty-service/test/jest-e2e.json\""
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
